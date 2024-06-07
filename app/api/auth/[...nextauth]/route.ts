@@ -2,6 +2,9 @@ import NextAuth, {AuthOptions} from "next-auth"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials";
+import prisma from "@/prisma";
+import {connectToDb} from "@/lib/helpers";
+import bcrypt from "bcrypt";
 
 const authOptions: AuthOptions = {
 
@@ -20,11 +23,32 @@ const authOptions: AuthOptions = {
                 email: {type: "text"},
                 password: {type: "password"}
             },
-            authorize(credentials, req) {
+            async authorize(credentials) {
                 if (!credentials || !credentials.email || !credentials.password) {
                     return null;
                 }
+                try {
+                    await connectToDb();
+                    const user = await prisma.user.findFirst({where: {email: credentials.email},})
 
+                    if (!user) {
+                        return null
+                    }
+                    if (!user.password) {
+                        return null;
+                    }
+
+                    const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+                    if (!isPasswordCorrect) {
+                        return null;
+                    }
+                    return {...user, id: user.id};
+                } catch (err) {
+                    return null
+
+                }finally {
+                    await prisma.$disconnect();
+                }
             }
         })
     ],
