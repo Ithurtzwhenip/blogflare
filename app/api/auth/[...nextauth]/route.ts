@@ -6,7 +6,7 @@ import prisma from "@/prisma";
 import {connectToDb} from "@/lib/helpers";
 import bcrypt from "bcrypt";
 
-const authOptions: AuthOptions = {
+export const authOptions: AuthOptions = {
 
     providers: [
         GithubProvider({
@@ -46,7 +46,7 @@ const authOptions: AuthOptions = {
                 } catch (err) {
                     return null
 
-                }finally {
+                } finally {
                     await prisma.$disconnect();
                 }
             }
